@@ -1,0 +1,49 @@
+---
+title: "Moral Foundations Questionnaire 2.0, supplement 1"
+output: html_document
+---
+
+```{r include = F}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(width = 200)
+
+library(tidyverse)
+library(lmerTest)
+
+```
+
+# Research Question 2: Interaction of participant nationality, LLM origin, prompt language, and persona
+
+```{r include = F}
+
+df <- read_csv("mfq_cosine_rq2.csv")
+
+info <- read_csv("llm_info.csv")
+
+df <- left_join(df, info)
+
+```
+
+```{r echo = F}
+
+df$Chinese_ppt <- ifelse(df$human_nation == "China", 0.5, -0.5)
+df$Chinese_ppt <- df$Chinese_ppt - mean(df$Chinese_ppt)
+
+df$Chinese_origin <- ifelse(df$llm_nation == "China", 0.5, -0.5)
+df$Chinese_origin <- df$Chinese_origin - mean(df$Chinese_origin, na.rm = T)
+
+df$Chinese_lang <- ifelse(df$language == "Chinese", 0.5, -0.5)
+df$Chinese_lang <- df$Chinese_lang - mean(df$Chinese_lang)
+
+df$Chinese_persona <- ifelse(df$persona == "China", 0.5, -0.5)
+df$Chinese_persona <- df$Chinese_persona - mean(df$Chinese_persona, na.rm = T)
+
+summary(lmer(
+  cosine ~ 
+    Chinese_ppt * Chinese_origin * Chinese_lang * Chinese_persona + 
+    (1|LLM) + (1|participant),
+  control = lmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 1e5)), 
+  df))
+
+```
